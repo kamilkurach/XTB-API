@@ -4,6 +4,7 @@ import logging
 import time
 import ssl
 from threading import Thread
+import sys
 
 # set to true on debug environment only
 DEBUG = True
@@ -160,6 +161,16 @@ class APIClient(JsonSocket):
         super(APIClient, self).__init__(address, port, encrypt)
         if(not self.connect()):
             raise Exception("Cannot connect to " + address + ":" + str(port) + " after " + str(API_MAX_CONN_TRIES) + " retries")
+        
+    def readCredentials(self, file):
+        try:
+            f = open(file)
+            data = json.load(f)
+            f.close()
+            return data['userId'], data['password']
+        except (FileNotFoundError, TypeError) as e:
+            print("Missing json file!")
+            sys.exit(1)
 
     def execute(self, dictionary):
         self._sendObj(dictionary)
@@ -301,12 +312,11 @@ def procNewsExample(msg):
 
 def main():
 
-    # enter your login credentials here
-    userId = 12345
-    password = "password"
-
     # create & connect to RR socket
     client = APIClient()
+
+    # enter your login credentials in my_credentials.json file
+    userId, password = client.readCredentials('my_credentials.json')
     
     # connect to RR socket, login
     loginResponse = client.execute(loginCommand(userId=userId, password=password))
